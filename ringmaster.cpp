@@ -104,6 +104,7 @@ int main(int argc, char const *argv[])
     fd_set readfds;
 
     while (true) {
+        FD_ZERO(&readfds);
         for (int i = 0; i < num_players; ++i) { 
             FD_SET(fd_list[i], &readfds);
         }
@@ -125,6 +126,7 @@ int main(int argc, char const *argv[])
                 //Close players
                 for (auto fd: fd_list) {
                     send_waitall(fd, &p, sizeof(p));
+                    close(fd);
                 }
                 return 0;
             }

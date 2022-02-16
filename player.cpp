@@ -71,19 +71,23 @@ int main(int argc, char const *argv[])
     fd_set readfds;
 
     int fd_list[3] = {left_fd, right_fd, ringmaster_fd};
-
-    bool game_finished = false;
-    while (!game_finished) {
+    while (true) {
+        FD_ZERO(&readfds);
         for (int i = 0; i < 3; ++i) { 
             FD_SET(fd_list[i], &readfds);
         }
         select(nfds, &readfds, NULL, NULL, NULL);
-        potato p;
         for (int i = 0; i < 3; ++i) {
             if (FD_ISSET(fd_list[i], &readfds)) {
-                recv(fd_list[i], &p, sizeof(p), MSG_WAITALL);
+                potato p;
+                p.remain_hops = 100;
+                int len = recv(fd_list[i], &p, sizeof(p), MSG_WAITALL);
+                if (len == 0) {
+                    //SIGKILL by the server
+                    return -1;
+                }
 
-                cout << "remain " << p.remain_hops << endl;
+                // cout << i << " remain " << p.remain_hops << endl;
                 //Signal for closing fd;
                 if (p.remain_hops == 0) {
                     //Signal for closing
@@ -109,6 +113,7 @@ int main(int argc, char const *argv[])
                     int next_id = 
                         (self_id + (index ? 1: -1) + total_players) % total_players;
                     cout << "Sending potato to player " << next_id << endl;
+                    break;
                 }
             }
         }
