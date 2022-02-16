@@ -10,66 +10,20 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm> 
+
+#include "potato.h"
+#include "util.h"
 
 using namespace std;
 
 class player_info {
 public:
     int player_fd;
-    int port; //Address info of the player
+    int listen_port; //The listening port of the client
     string ip;
     int id;
 };
-
-int listen_step(const char* port) {
-    int status;
-    int socket_fd;
-    struct addrinfo host_info;
-    struct addrinfo *host_info_list;
-    const char *hostname = NULL;
-
-    memset(&host_info, 0, sizeof(host_info));
-
-    host_info.ai_family   = AF_UNSPEC;
-    host_info.ai_socktype = SOCK_STREAM;
-    host_info.ai_flags    = AI_PASSIVE;
-
-    status = getaddrinfo(hostname, port, &host_info, &host_info_list);
-    if (status != 0) {
-        cerr << "Error: cannot get address info for host" << endl;
-        cerr << "  (" << hostname << "," << port << ")" << endl;
-        return -1;
-    } //if
-
-    socket_fd = socket(host_info_list->ai_family, 
-                host_info_list->ai_socktype, 
-                host_info_list->ai_protocol);
-    if (socket_fd == -1) {
-        cerr << "Error: cannot create socket" << endl;
-        cerr << "  (" << hostname << "," << port << ")" << endl;
-        return -1;
-    } //if
-
-    int yes = 1;
-    status = setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-    status = bind(socket_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
-    if (status == -1) {
-        cerr << "Error: cannot bind socket" << endl;
-        cerr << "  (" << hostname << "," << port << ")" << endl;
-        return -1;
-    }
-
-    status = listen(socket_fd, 100);
-    if (status == -1) {
-        cerr << "Error: cannot listen on socket" << endl; 
-        cerr << "  (" << hostname << "," << port << ")" << endl;
-        return -1;
-    }
-
-    cout << "Waiting for connection on port " << port << endl;
-    
-    return socket_fd;
-}
 
 int main(int argc, char const *argv[])
 {
@@ -108,23 +62,74 @@ int main(int argc, char const *argv[])
 
         struct sockaddr_in *s_addr = (struct sockaddr_in *) &socket_addr;
         p_info.ip = inet_ntoa(s_addr->sin_addr);
-        p_info.port = ntohs(s_addr->sin_port);
 
         send(p_info.player_fd, &i, sizeof(i), 0); //Send id to player
-
+        send(p_info.player_fd, &num_players, sizeof(num_players), 0);
+        recv(p_info.player_fd, &(p_info.listen_port), sizeof(p_info.listen_port), MSG_WAITALL);
         player_infos.push_back(p_info);
     }
-
     //Notify the neighbor info for each player
     for (int i = 0; i < num_players; ++i) {
-
+        int next_index = (i + 1) % num_players;
+        int ip_size = player_infos[next_index].ip.length();
+        send(player_infos[i].player_fd, 
+            &(ip_size), sizeof(ip_size), 0); //neigbor ip size
+        send(player_infos[i].player_fd, 
+            player_infos[next_index].ip.c_str(), 
+            player_infos[next_index].ip.length(), 0); //neigbor ip
+        send(player_infos[i].player_fd, 
+            &(player_infos[next_index].listen_port),
+            sizeof(player_infos[next_index].listen_port), 0); //neibor port
     }
 
-
-
-
     //Begin the game 
+    srand((unsigned int)time(NULL));
     int random_start_player = rand() % num_players;
 
     cout << "Ready to start the game, sending potato to player " << random_start_player << endl;
+
+    potato p = {
+        .index = 0,
+        .remain_hops = num_hops
+    };
+    memset(p.player_list, 512*sizeof(int), 0);
+    send(player_infos[random_start_player].player_fd, &p, sizeof(p), 0);
+
+    vector<int> fd_list;
+    for (auto& info: player_infos) {
+        fd_list.push_back(info.player_fd);
+    }
+
+    int nfds = *max_element(fd_list.begin(), fd_list.end()) + 1;
+    fd_set readfds;
+
+    while (true) {
+        for (int i = 0; i < num_players; ++i) { 
+            FD_SET(fd_list[i], &readfds);
+        }
+        
+        select(nfds, &readfds, NULL, NULL, NULL);
+        potato p;
+
+        for (int i = 0; i < num_players; ++i) { 
+            if (FD_ISSET(fd_list[i], &readfds)) {
+                recv(fd_list[i], &p, sizeof(p), MSG_WAITALL);
+                cout << "Last is player " << i << endl;
+                cout << "Trace of potato:" << endl;
+                for (int i = 0; i < num_hops; ++i) {
+                    cout << p.player_list[i];
+                    if (i != num_hops - 1) cout << ",";
+                }
+                cout << endl;
+                p.remain_hops = 0;
+                //close others
+                for (auto fd: fd_list) {
+                    send(fd, &p, sizeof(p), 0);
+                }
+                return 0;
+            }
+        }
+    }
+
+    
 }
