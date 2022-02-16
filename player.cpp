@@ -71,6 +71,7 @@ int main(int argc, char const *argv[])
     fd_set readfds;
 
     int fd_list[3] = {left_fd, right_fd, ringmaster_fd};
+    srand((unsigned int)time(NULL) + self_id);
     while (true) {
         FD_ZERO(&readfds);
         for (int i = 0; i < 3; ++i) { 
@@ -106,7 +107,6 @@ int main(int argc, char const *argv[])
                     break;
                 } else {
                     //Send it to other players.
-                    srand((unsigned int)time(NULL) + self_id);
                     int index = rand() % 2;
                     int next_hop = fd_list[index];
                     send_waitall(next_hop, &p, sizeof(p));
