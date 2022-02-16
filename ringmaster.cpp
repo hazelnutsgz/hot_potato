@@ -63,8 +63,8 @@ int main(int argc, char const *argv[])
         struct sockaddr_in *s_addr = (struct sockaddr_in *) &socket_addr;
         p_info.ip = inet_ntoa(s_addr->sin_addr);
 
-        send(p_info.player_fd, &i, sizeof(i), 0); //Send id to player
-        send(p_info.player_fd, &num_players, sizeof(num_players), 0);
+        send_waitall(p_info.player_fd, &i, sizeof(i)); //Send id to player
+        send_waitall(p_info.player_fd, &num_players, sizeof(num_players));
         recv(p_info.player_fd, &(p_info.listen_port), sizeof(p_info.listen_port), MSG_WAITALL);
         player_infos.push_back(p_info);
     }
@@ -72,14 +72,14 @@ int main(int argc, char const *argv[])
     for (int i = 0; i < num_players; ++i) {
         int next_index = (i + 1) % num_players;
         int ip_size = player_infos[next_index].ip.length();
-        send(player_infos[i].player_fd, 
-            &(ip_size), sizeof(ip_size), 0); //neigbor ip size
-        send(player_infos[i].player_fd, 
-            player_infos[next_index].ip.c_str(), 
-            player_infos[next_index].ip.length(), 0); //neigbor ip
-        send(player_infos[i].player_fd, 
-            &(player_infos[next_index].listen_port),
-            sizeof(player_infos[next_index].listen_port), 0); //neibor port
+        send_waitall(player_infos[i].player_fd, 
+                    &(ip_size), sizeof(ip_size)); //neigbor ip size
+        send_waitall(player_infos[i].player_fd, 
+                (void* ) player_infos[next_index].ip.c_str(), 
+                player_infos[next_index].ip.length()); //neigbor ip
+        send_waitall(player_infos[i].player_fd, 
+                &(player_infos[next_index].listen_port),
+                sizeof(player_infos[next_index].listen_port)); //neibor port
     }
 
     //Begin the game 
@@ -93,7 +93,7 @@ int main(int argc, char const *argv[])
         .remain_hops = num_hops
     };
     memset(p.player_list, 512*sizeof(int), 0);
-    send(player_infos[random_start_player].player_fd, &p, sizeof(p), 0);
+    send_waitall(player_infos[random_start_player].player_fd, &p, sizeof(p));
 
     vector<int> fd_list;
     for (auto& info: player_infos) {
@@ -114,7 +114,6 @@ int main(int argc, char const *argv[])
         for (int i = 0; i < num_players; ++i) { 
             if (FD_ISSET(fd_list[i], &readfds)) {
                 recv(fd_list[i], &p, sizeof(p), MSG_WAITALL);
-                cout << "Last is player " << i << endl;
                 cout << "Trace of potato:" << endl;
                 for (int i = 0; i < num_hops; ++i) {
                     cout << p.player_list[i];
@@ -122,9 +121,10 @@ int main(int argc, char const *argv[])
                 }
                 cout << endl;
                 p.remain_hops = 0;
-                //close others
+                
+                //Close players
                 for (auto fd: fd_list) {
-                    send(fd, &p, sizeof(p), 0);
+                    send_waitall(fd, &p, sizeof(p));
                 }
                 return 0;
             }

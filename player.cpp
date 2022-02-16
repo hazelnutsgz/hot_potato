@@ -35,7 +35,7 @@ int main(int argc, char const *argv[])
     socklen_t len = sizeof(my_addr);
     getsockname(listen_fd, (struct sockaddr *)& my_addr, &len);
     int listen_port = ntohs(my_addr.sin_port);
-    send(ringmaster_fd, &listen_port, sizeof(listen_port), 0);
+    send_waitall(ringmaster_fd, &listen_port, sizeof(listen_port));
 
     int self_id, total_players;
     recv(ringmaster_fd, &self_id, sizeof(self_id), MSG_WAITALL);
@@ -83,6 +83,7 @@ int main(int argc, char const *argv[])
             if (FD_ISSET(fd_list[i], &readfds)) {
                 recv(fd_list[i], &p, sizeof(p), MSG_WAITALL);
 
+                cout << "remain " << p.remain_hops << endl;
                 //Signal for closing fd;
                 if (p.remain_hops == 0) {
                     //Signal for closing
@@ -96,14 +97,15 @@ int main(int argc, char const *argv[])
 
                 if (p.remain_hops == 0) {
                     //Send it back to ringmaster
-                    send(ringmaster_fd, &p, sizeof(p), 0);
+                    send_waitall(ringmaster_fd, &p, sizeof(p));
                     cout << "I’m it" << endl;
+                    break;
                 } else {
                     //Send it to other players.
                     srand((unsigned int)time(NULL) + self_id);
                     int index = rand() % 2;
                     int next_hop = fd_list[index];
-                    send(next_hop, &p, sizeof(p), 0);
+                    send_waitall(next_hop, &p, sizeof(p));
                     int next_id = 
                         (self_id + (index ? 1: -1) + total_players) % total_players;
                     cout << "Sending potato to player " << next_id << endl;

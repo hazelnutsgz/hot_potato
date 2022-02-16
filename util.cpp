@@ -94,3 +94,12 @@ int listen_step(const char* port) {
     
     return socket_fd;
 }
+
+int send_waitall(int fd, void* buffer, int len) {
+    int has_sent = 0;
+    while (has_sent < len) {
+        int sent = send(fd, buffer+has_sent, len-has_sent, 0);
+        has_sent += sent;
+    }
+    return 0;
+}

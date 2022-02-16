@@ -15,3 +15,4 @@ const int IP_STRING_SIZE = 50;
 
 int listen_step(const char* port);
 int connect_step(const char *hostname, const char* port);
+int send_waitall(int fd, void* buffer, int len);
