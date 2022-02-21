@@ -67,7 +67,9 @@ int main(int argc, char const *argv[])
         send_waitall(p_info.player_fd, &num_players, sizeof(num_players));
         recv(p_info.player_fd, &(p_info.listen_port), sizeof(p_info.listen_port), MSG_WAITALL);
         player_infos.push_back(p_info);
+        cout << "player " << i << " is ready to play" << endl;
     }
+    
     //Notify the neighbor info for each player
     for (int i = 0; i < num_players; ++i) {
         int next_index = (i + 1) % num_players;
