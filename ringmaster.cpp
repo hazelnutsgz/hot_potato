@@ -87,7 +87,8 @@ int main(int argc, char const *argv[])
     srand((unsigned int)time(NULL));
     int random_start_player = rand() % num_players;
 
-    cout << "Ready to start the game, sending potato to player " << random_start_player << endl;
+    if (num_hops > 0)
+        cout << "Ready to start the game, sending potato to player " << random_start_player << endl;
 
     potato p = {
         .index = 0,
@@ -116,12 +117,14 @@ int main(int argc, char const *argv[])
         for (int i = 0; i < num_players; ++i) { 
             if (FD_ISSET(fd_list[i], &readfds)) {
                 recv(fd_list[i], &p, sizeof(p), MSG_WAITALL);
-                cout << "Trace of potato:" << endl;
-                for (int i = 0; i < num_hops; ++i) {
-                    cout << p.player_list[i];
-                    if (i != num_hops - 1) cout << ",";
+                if (num_hops != 0) {
+                    cout << "Trace of potato:" << endl;
+                    for (int i = 0; i < num_hops; ++i) {
+                        cout << p.player_list[i];
+                        if (i != num_hops - 1) cout << ",";
+                    }
+                    cout << endl;
                 }
-                cout << endl;
                 p.remain_hops = 0;
                 
                 //Close players
