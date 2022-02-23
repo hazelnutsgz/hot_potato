@@ -13,7 +13,6 @@
 #include <algorithm> 
 
 #include "potato.h"
-#include "util.h"
 
 using namespace std;
 
@@ -62,7 +61,7 @@ int main(int argc, char const *argv[])
 
         struct sockaddr_in *s_addr = (struct sockaddr_in *) &socket_addr;
         p_info.ip = inet_ntoa(s_addr->sin_addr);
-
+	//cout << "string info:" << p_info.ip << endl;
         send_waitall(p_info.player_fd, &i, sizeof(i)); //Send id to player
         send_waitall(p_info.player_fd, &num_players, sizeof(num_players));
         recv(p_info.player_fd, &(p_info.listen_port), sizeof(p_info.listen_port), MSG_WAITALL);

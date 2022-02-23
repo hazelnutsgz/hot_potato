@@ -10,8 +10,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-
-#include "util.h"
 #include "potato.h"
 
 using namespace std;

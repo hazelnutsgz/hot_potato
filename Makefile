@@ -3,9 +3,9 @@ DEPS = util.h potato.h
 all: player ringmaster
 
 player:
-	g++ -g -o player player.cpp util.cpp potato.h
+	g++ -g -o player player.cpp potato.h
 ringmaster:
-	g++ -g -o ringmaster ringmaster.cpp util.cpp potato.h
+	g++ -g -o ringmaster ringmaster.cpp potato.h
 clean:
 	rm -rf *.o
 	rm -rf ringmaster
