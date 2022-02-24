@@ -90,10 +90,13 @@ int main(int argc, char const *argv[])
     if (num_hops > 0)
         cout << "Ready to start the game, sending potato to player " << random_start_player << endl;
 
-    potato p = {
-        .index = 0,
-        .remain_hops = num_hops
-    };
+    // potato p = {
+    //     .index = 0,
+    //     .remain_hops = num_hops
+    // };
+    potato p;
+    p.index = 0;
+    p.remain_hops = num_hops;
     memset(p.player_list, 512*sizeof(int), 0);
     send_waitall(player_infos[random_start_player].player_fd, &p, sizeof(p));
 
