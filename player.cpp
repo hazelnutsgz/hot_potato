@@ -110,7 +110,7 @@ int main(int argc, char const *argv[])
                     send_waitall(next_hop, &p, sizeof(p));
                     int next_id = 
                         (self_id + (index ? 1: -1) + total_players) % total_players;
-                    cout << "Sending potato to player " << next_id << endl;
+                    cout << "Sending potato to " << next_id << endl;
                     break;
                 }
             }
