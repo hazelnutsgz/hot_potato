@@ -101,7 +101,7 @@ int main(int argc, char const *argv[])
                 if (p.remain_hops == 0) {
                     //Send it back to ringmaster
                     send_waitall(ringmaster_fd, &p, sizeof(p));
-                    cout << "I’m it" << endl;
+                    cout << "I'm it" << endl;
                     break;
                 } else {
                     //Send it to other players.
